@@ -8,8 +8,6 @@
 #include <WiFiClient.h>
 #include <HTTPUpdateServer.h>
 
-#define S_FACTOR 16
-
 Adafruit_MPU6050 mpu;
 WiFiUDP udp;
 
@@ -20,23 +18,8 @@ const char * hostname = "fpen wireless";
 
 const int port = 6969;
 
-const int bufferSize = 255;
+const int bufferSize = 50;
 char buffer[bufferSize];
-
-int8_t f_fixed(float f)
-{
-  // TODO - change S_FACTOR to more precise value
-  int s = round(f * S_FACTOR);
-  if (s > 127)
-  {
-    s = 127;
-  }
-  else if (s < -128)
-  {
-    s = -128;
-  }
-  return (int8_t)s;
-}
 
 void setup(void)
 {
@@ -54,9 +37,9 @@ void setup(void)
 
   udp.begin(port);
 
+  /* Failed to find MPU6050 chip! */
   if (!mpu.begin())
   {
-    char *message = "Failed to find MPU6050 chip";
     while (1)
     {
       int packetSize = udp.parsePacket();
@@ -66,7 +49,8 @@ void setup(void)
         if (len > 0)
         {
           udp.beginPacket(udp.remoteIP(), udp.remotePort());
-          udp.write((const uint8_t *)message,strlen(message));
+          sprintf(buffer, "%d%d%d", -1,-1,-1);
+          udp.write((const uint8_t *)buffer,strlen(buffer));
           udp.endPacket();
         }
       }
@@ -80,60 +64,26 @@ void setup(void)
 
 void loop()
 {
-  int packetSize = udp.parsePacket();
-  if (packetSize)
+  if (udp.parsePacket())
   {
     int len = udp.read(buffer, bufferSize);
     if (len > 0)
     {
-      buffer[len] = 0;
       IPAddress remoteIP = udp.remoteIP();
-      
-      sensors_event_t a, g, temp;
-      mpu.getEvent(&a, &g, &temp);
-      
-      // TODO - add availibility to send more data with one request
-      switch (buffer[0])
+
+      while (1)
       {
-        case '0':
-          bzero(buffer,bufferSize);
-          sprintf(buffer, "%d", f_fixed(a.acceleration.x));
-          break;
- 
-        case '1':
-          bzero(buffer,bufferSize);
-          sprintf(buffer, "%d", f_fixed(a.acceleration.y));
-          break;
- 
-        case '2':
-          bzero(buffer,bufferSize);
-          sprintf(buffer, "%d", f_fixed(a.acceleration.z));
-          break;
- 
-        case '3':
-          bzero(buffer,bufferSize);
-          sprintf(buffer, "%d", f_fixed(g.gyro.x));
-          break;
- 
-        case '4':
-          bzero(buffer,bufferSize);
-          sprintf(buffer, "%d", f_fixed(g.gyro.y));
-          break;
- 
-        case '5':
-          bzero(buffer,bufferSize);
-          sprintf(buffer, "%d", f_fixed(g.gyro.z));
-          break;
-        default:
-          sprintf(buffer, "%f", 0.f);
-          break;
+        sensors_event_t a, g, temp;
+        mpu.getEvent(&g, &a, &temp);
+        
+        sprintf(buffer, "%.2f,%.2f,%.2f", a.acceleration.x, a.acceleration.y, a.acceleration.z);
+
+        udp.beginPacket(udp.remoteIP(), udp.remotePort());
+        udp.write((const uint8_t *)buffer,strlen(buffer));
+        udp.endPacket();
+        
+        bzero(buffer,bufferSize);
       }
-
-      udp.beginPacket(udp.remoteIP(), udp.remotePort());
-      udp.write((const uint8_t *)buffer,strlen(buffer));
-      udp.endPacket();
-
-      bzero(buffer,bufferSize);
     }
   }
 }
