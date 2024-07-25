@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 		
 		printf("x = %f, y = %f, z = %f | x = %f, y = %f, z = %f\n", x, y, z, ax, ay, az);
 
-		move_mouse(sockfd, x, y);
+		move_mouse(mousefd, x, y);
 		
 		//usleep(10000);
 	}
