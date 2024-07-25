@@ -1,4 +1,3 @@
-/* For X11 only for now */
 #include <stdlib.h> 
 #include <sys/types.h> 
 #include <sys/socket.h> 
@@ -6,11 +5,10 @@
 #include <netinet/in.h> 
 #include <stdio.h>
 #include <string.h>
-#include <X11/Xlib.h>
 #include <math.h>
+#include <unistd.h>
 
-int width = 1600;
-int height = 900;
+#include "mouse_movement.h"
 
 int main(int argc, char *argv[])
 {
@@ -55,21 +53,16 @@ int main(int argc, char *argv[])
 
 	float x = 0, y = 0, z = 0, ax, ay, az;
 	float sf = 10; /* scaling factor */
-	
+
+	int mousefd = setup_uinput_device();	
+	if (mousefd == -1)
+	{
+		perror("setup_uinput_device() error");
+		exit(EXIT_FAILURE);
+	}
 	
 	while (1)
 	{
-		Display *display;
-		Window root;
-		display = XOpenDisplay(NULL);
-		if (display == NULL)
-		{
-	     fprintf(stderr, "Cannot open display\n");
-	     return 1;
-		}
-		int screen = DefaultScreen(display);
-		XWindowAttributes attributes;
-		root = RootWindow(display, screen);
 		recvfrom(sockfd,buffer,bufferSize,0,(struct sockaddr*)&addr,&addr_size);
 		buffer[bufferSize] = '\0';
 
@@ -88,14 +81,13 @@ int main(int argc, char *argv[])
 		if (fabs(az) > 0.1)
 			z = (z - az * sf);
 		
-		if (x < 0) x = 0; if (x > width) x = width;
-
-		if (y < 0) y = 0; if (y > height) y = height;
-		if (z < 0) z = 0;	if (z > width) z = width;
-
 		printf("x = %f, y = %f, z = %f | x = %f, y = %f, z = %f\n", x, y, z, ax, ay, az);
-		XWarpPointer(display, None, root, 0, 0,width, height, z, y);	
-		XCloseDisplay(display);
+
+		move_mouse(sockfd, x, y);
+		
+		//usleep(10000);
 	}
+
+	destroy_uinput_device(mousefd);
 	return 0;
 }
