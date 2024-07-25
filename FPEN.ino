@@ -64,6 +64,8 @@ void setup(void)
 
 void loop()
 {
+  //int get_answer = 0; // if > 100 then wait for answer
+
   if (udp.parsePacket())
   {
     int len = udp.read(buffer, bufferSize);
@@ -83,6 +85,17 @@ void loop()
         udp.endPacket();
         
         bzero(buffer,bufferSize);
+        
+        /* if (get_answer > 100) //TODO: check connection with server
+        {
+          int8_t answ = udp.read(buffer, 2);
+          if (answ > 0)
+          {
+            break;
+          }
+        }
+        get_answer++;
+        */
       }
     }
   }

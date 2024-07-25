@@ -10,6 +10,8 @@
 
 #include "mouse_movement.h"
 
+float sf = 1; /* scaling factor */
+
 int main(int argc, char *argv[])
 {
 	if (argv[1]==0)
@@ -51,9 +53,6 @@ int main(int argc, char *argv[])
 			(struct sockaddr*)&addr,
 			addr_size);
 
-	float x = 0, y = 0, z = 0, ax, ay, az;
-	float sf = 10; /* scaling factor */
-
 	int mousefd = setup_uinput_device();	
 	if (mousefd == -1)
 	{
@@ -61,6 +60,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	
+	float x = 0, y = 0, z = 0, ax = 0, ay = 0, az = 0;
 	while (1)
 	{
 		recvfrom(sockfd,buffer,bufferSize,0,(struct sockaddr*)&addr,&addr_size);
@@ -69,22 +69,20 @@ int main(int argc, char *argv[])
 		char *token = strtok(buffer, ",");
 		ax = atof(token);
 		if (fabs(ax) > 0.1)
-			x = (x - ax * sf);
+			x = ax;
 
 		token = strtok(NULL, ",");
 		ay = atof(token);
 		if (fabs(ay) > 0.1)
-			y = (y - ay * sf );
+			y = ay;
 
 		token = strtok(NULL, ",");
 		az = atof(token);
 		if (fabs(az) > 0.1)
-			z = (z - az * sf);
-		
-		printf("x = %f, y = %f, z = %f | x = %f, y = %f, z = %f\n", x, y, z, ax, ay, az);
+			z = az;
+		printf("x = %f, y = %f, z = %f\n", x, y, z);
 
-		move_mouse(mousefd, x, y);
-		
+		move_mouse(mousefd, x, z);
 		//usleep(10000);
 	}
 
