@@ -25,11 +25,11 @@ int setup_uinput_device()
     }
 
     memset(&uidev, 0, sizeof(uidev));
-    snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "Virtual Mouse");
+    snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "FPEN");
     uidev.id.bustype = BUS_USB;
-    uidev.id.vendor  = 0x1234;
-    uidev.id.product = 0x5678;
-    uidev.id.version = 1;
+    uidev.id.vendor  = 0x6969;
+    uidev.id.product = 0x6968;
+    uidev.id.version = 3;
 
     if (write(fd, &uidev, sizeof(uidev)) < 0 ||
         ioctl(fd, UI_DEV_CREATE) < 0) {
